@@ -1,9 +1,47 @@
 from tkinter import *
 import requests
 import json
+import sqlite3
 
 pycrypto = Tk()
 pycrypto.title("Crypto Portfolio")
+
+con = sqlite3.connect('cryptocoin.db')
+cursorObj = con.cursor()
+
+cursorObj.execute("CREATE TABLE IF NOT EXISTS COIN(ID INTEGER PRIMARY KEY, SYMBOL TEXT, AMOUNT INTEGER, PRICE REAL)")
+con.commit()
+
+# Insert data to database
+# coins = [
+#         {
+#             "symbol": "BTC",
+#             "amount_owned": 2,
+#             "price_per_coin": 28000
+#         }, 
+#         {
+#             "symbol": "ETH",
+#             "amount_owned": 3,
+#             "price_per_coin": 2000
+#         }, 
+#         {
+#             "symbol": "XRP",
+#             "amount_owned": 5,
+#             "price_per_coin": 1
+#         }, 
+#         {
+#             "symbol": "DOGE",
+#             "amount_owned": 10,
+#             "price_per_coin": 1
+#         }
+#     ]
+
+# id = 0
+# for coin in coins:
+#     cursorObj.execute("INSERT INTO COIN VALUES(?,?,?,?)",(id, coin["symbol"], coin["amount_owned"], coin["price_per_coin"]))
+#     con.commit()
+#     id = id + 1
+
 
 def font_color(amount):
     if amount >= 0:
@@ -16,29 +54,8 @@ def get_data():
     api_request = requests.get("https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&limit=500&convert=USD&CMC_PRO_API_KEY=5a904e6d-6c76-40bd-8dbb-a0b3e4c02471")
     api = json.loads(api_request.content)
 
-
-    coins = [
-        {
-            "symbol": "BTC",
-            "amount_owned": 2,
-            "price_per_coin": 28000
-        }, 
-        {
-            "symbol": "ETH",
-            "amount_owned": 3,
-            "price_per_coin": 2000
-        }, 
-        {
-            "symbol": "XRP",
-            "amount_owned": 5,
-            "price_per_coin": 1
-        }, 
-        {
-            "symbol": "DOGE",
-            "amount_owned": 10,
-            "price_per_coin": 1
-        }
-    ]
+    cursorObj.execute("SELECT * FROM COIN")
+    coins = cursorObj.fetchall()
 
     total_pl = 0
     coin_row = 1
@@ -46,19 +63,19 @@ def get_data():
 
     for i in range(0,500):
         for coin in coins:
-            if api["data"][i]["symbol"] == coin["symbol"]:
+            if api["data"][i]["symbol"] == coin[1]:
 
-                total_paid = coin["amount_owned"] * coin["price_per_coin"]
-                current_value = coin["amount_owned"] * api["data"][i]["quote"]["USD"]["price"]
-                pl_margin = api["data"][i]["quote"]["USD"]["price"] - coin["price_per_coin"]
-                total_pl_coin = pl_margin * coin["amount_owned"] 
+                total_paid = coin[2] * coin[3]
+                current_value = coin[2] * api["data"][i]["quote"]["USD"]["price"]
+                pl_margin = api["data"][i]["quote"]["USD"]["price"] - coin[3]
+                total_pl_coin = pl_margin * coin[2] 
 
                 total_pl = total_pl + total_pl_coin
                 total_current_value = total_current_value + current_value
 
                 # print(api["data"][i]["name"] + '-' + api["data"][i]["symbol"])
                 # print("Price - ${0:.2f}".format(api["data"][i]["quote"]["USD"]["price"]))
-                # print("Number of coin -", coin["amount_owned"])
+                # print("Number of coin -", coin[2])
                 # print("Total Amount Paid - ", "${0:.2f}".format(total_paid))
                 # print("Current Value - ", "${0:.2f}".format(current_value))
                 # print("P/L Margin - ", "${0:.2f}".format(pl_margin))
@@ -71,7 +88,7 @@ def get_data():
                 price = Label(pycrypto, text="${0:.2f}".format(api["data"][i]["quote"]["USD"]["price"]), bg="white" , fg="black", font= "Lato 12", padx= "5", pady= "5", borderwidth= 2, relief= "groove")
                 price.grid(row=coin_row, column=1, sticky=N+S+E+W)
 
-                amount_owned = Label(pycrypto, text=coin["amount_owned"], bg="grey" , fg="black", font= "Lato 12", padx= "5", pady= "5", borderwidth= 2, relief= "groove")
+                amount_owned = Label(pycrypto, text=coin[2], bg="grey" , fg="black", font= "Lato 12", padx= "5", pady= "5", borderwidth= 2, relief= "groove")
                 amount_owned.grid(row=coin_row, column=2, sticky=N+S+E+W)
 
                 paid_amount = Label(pycrypto, text="${0:.2f}".format(total_paid), bg="white" , fg="black", font= "Lato 12", padx= "5", pady= "5", borderwidth= 2, relief= "groove")
@@ -126,4 +143,6 @@ total_pl_margin.grid(row=0, column=6, sticky=N+S+E+W)
 get_data()
 pycrypto.mainloop()
 
+cursorObj.close()
+con.close()
 print("Portfolio Closed")

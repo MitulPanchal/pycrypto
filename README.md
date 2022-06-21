@@ -1,5 +1,8 @@
 ## Cryption Currency Portfolio Application
 
+# General Info
+Simple python application which will fetch data using free CoinMarketCap API (https://coinmarketcap.com/api/) and store it in database and make portfolio application.
+
 Language - 
 * Python 3.10.4
 * Tkinter (For GUI Application) 8.6 
